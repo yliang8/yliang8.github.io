@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<!-----------------------------------------------------------------------------
+This is the html file of a JAVA EE APP for one2one calling with automatic 
+face overlay and recording with KURENTO.       
+It contains two video boxes, one for local video, one for the peer
+video stream from the kurento server which adds a faceoverlay.  
+Register, Start, and Stop buttons which are tied to the JavaScript client
+javascript which controls the browser WebRTC, as well as relays messages 
+with the application server. This file has the following elements:
+
+id			description                         JS function binding
+-------------------------------------------------------------------
+name        text box for user name				-> register() on ENTER keypress
+register    button to register the given name   -> register()
+peer        text box for peer name              -> call() on ENTER keypress
+call        button to start call				-> call()
+terminate   button to stop call					-> stop()
+confirmVideo button for confirming peer video	-> confirmVideo()
+startGame   signal ready to start game			-> startGame()
+play        button to play recorded session		-> play()
+
+statusBox		game state						none
+directionsBox 	directions based on state		none
+roleBox
+
+imageBox    div tag for imageBox				none
+describerImage div tag for image				none
+videoBig    div tag for peer video box     		none
+videoSmall  div tag for local video box    		none
+videoInput  video tag for peer video stream     none
+videoOuput  video tag for local video stream    none 
+console     text box for debug messages			none
+-----------------------------------------------------------------------------> 
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="cache-control" content="no-cache">
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="shortcut icon" href="./img/kurento.png" type="image/png" />
+
+<link rel="stylesheet"
+	href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+<link rel="stylesheet"
+	href="bower_components/ekko-lightbox/dist/ekko-lightbox.min.css">
+<link rel="stylesheet" href="css/kurento.css">
+
+<script src="bower_components/jquery/dist/jquery.min.js"></script>
+<script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="bower_components/ekko-lightbox/dist/ekko-lightbox.min.js"></script>
+<script src="bower_components/draggabilly/dist/draggabilly.pkgd.min.js"></script>
+<script src="bower_components/adapter.js/adapter.js"></script>
+
+<script src="./js/kurento-utils.js"></script>
+<script src="./js/console.js"></script>
+<script src="./js/index.js"></script>
+<title>Flimflam Game Server</title>
+</head>
+<body>
+	<header>
+		<div class="navbar navbar-inverse navbar-fixed-top">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse"
+						data-target=".navbar-collapse"></button>
+					<a class="navbar-brand" href="./">Flimflam home</a>
+				</div>
+				<div class="collapse navbar-collapse"
+					id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav navbar-right">
+						<li><a
+							href="https://github.com/Kurento/kurento-tutorial-java/tree/master/kurento-one2one-call-advanced"><span
+								class="glyphicon glyphicon-file"></span> Source Code</a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</header>
+	<div class="container">
+		<div class="page-header">
+			<!-- DIRECTIONS TEXT BOX -->
+			<b>Directions:
+			<input id="directionsBox" name="directionsBox" 
+				class="form-control" type="text"></b>
+				
+			<label class="control-label" for="status">Status</label>
+			<!-- STATUS TEXT BOX -->
+			<input id="statusBox" name="statusBox" 
+				class="form-control" type="text">
+
+			<label class="control-label" for="status">Player Role:</label>
+			<!-- ROLE TEXT BOX -->
+			<input id="roleBox" name="statusBox" 
+				class="form-control" type="text">
+				</div>
+		
+		<div class="row">		
+			<div class="col-md-5">
+				<label class="control-label" for="name">Name</label>
+				<div class="row">
+					<div class="col-md-5">
+					
+					 	<!-- NAME TEXT BOX -->
+						<input id="name" name="name" class="form-control" type="text"
+							onkeydown="if (event.keyCode == 13) register();" />
+							
+					</div>
+					<div class="col-md-7 text-left">
+					
+					 	<!-- REGISTER BUTTON -->
+						<a id="register" href="#" class="btn btn-primary"
+							onclick="register(); return false;"><span
+							class="glyphicon glyphicon-plus"></span> Login</a>
+							
+					</div>
+				</div>
+
+				<br /> <br /> <label class="control-label" for="peer">Peer</label>
+				<div class="row">
+					<div class="col-md-5">
+						
+						<!-- PEER TEXT BOX -->
+						<input id="peer" name="peer" class="form-control" type="text"
+							onkeydown="if (event.keyCode == 13) call();">
+							
+					</div>
+					<div class="col-md-7 text-left">
+					
+						<!-- CALL/CONNECT BUTTON -->
+						<a id="call" href="#" class="btn btn-success"
+							onclick="call(); return false;">
+							<span class="glyphicon glyphicon-play">
+							</span> Connect</a> 
+							
+						<!-- STOP BUTTON -->
+						<a id="terminate" href="#" class="btn btn-danger" 
+							onclick="stop(); return false;">
+							<span class="glyphicon glyphicon-stop">
+							</span> Stop</a> 
+
+					</div>
+				</div>
+				<br />
+				
+				<div class="row">
+					<div class="col-md-5">					
+						<b>Click confirm when opponent video appears.</b>	
+					</div>
+					<div class="col-md-7 text-left">					
+						<!-- CONFIRM BUTTON -->
+						<a id="confirmVideo" href="#" class="btn btn-success"
+							onclick="confirmVideo(); return false;">
+							<span class="glyphicon glyphicon-play">
+							</span> Confirm</a> 
+					</div>
+				</div>
+				<br />
+				<div class="row">
+					<div class="col-md-5">					
+						<b>Click start when ready to begin.</b>
+					</div>
+					<div class="col-md-7 text-left">	
+					<!-- START GAME BUTTON -->
+						<a id="startGame" href="#" class="btn btn-success"
+							onclick="startGameSend(); return false;">
+							<span class="glyphicon glyphicon-play">
+							</span> Start</a> 
+					</div>
+				</div>
+				
+				<br />
+				<!-- IMAGE BOX -->
+				<div id="imageBox"><b>Describe this image</b>
+				<br /> 
+				<!-- <img src="img/.jpg" alt="Klematis" width="110" height="90"> -->
+				<img src="./img/naevatec.png" alt="image" width="300px" height="300px" 
+						style="border:3px solid black" id="describerImage" />
+				</div>
+				<hr>
+				<div>
+					<!-- PLAY BUTTON -->
+					<a id="play" href="#" class="btn btn-warning" 
+					onclick="play(); return false;">
+					<span class="glyphicon glyphicon-play-circle">
+					</span>Play Rec</a>
+                   
+				    <!-- APPEAR BUTTON -->
+						<a id="showImage" href="#" class="btn btn-success"
+							onclick="showLocalVideo(); return false;"> Show</a> 
+							
+					<!-- DISAPPEAR BUTTON -->
+					<a id="hideImage" href="#" class="btn btn-danger" 
+						onclick="hideLocalVideo(); return false;"> Hide</a> 
+
+				</div>						
+				<!-- CONSOLE DEBUG BOX -->
+				<br /> <label class="control-label" for="console">Console</label>
+				<div id="console"></div>
+
+			</div>
+			<div class="col-md-7">
+				
+				<!-- VIDEO BOX FOR PEER STREAM -->
+				<div id="videoBig">
+				
+					<!-- you can change dimensions here and it will autoscale -->
+					<video id="videoOutput" autoplay width="640px" height="480px"
+						poster="./img/webrtc.png"></video>
+				</div>
+				
+				<!-- VIDEO BOX FOR LOCAL STREAM -->
+				<div id="videoSmall">
+					<video id="videoInput" autoplay width="240px" height="180px"
+						poster="./img/webrtc.png"></video>
+				</div>
+				
+			</div>
+		</div>
+	</div>
+
+	<!--
+	<footer>
+		<div class="foot-fixed-bottom">
+			<div class="container text-center">
+				<hr />
+				<div class="row">&copy; 2014 Kurento</div>
+				<div class="row">
+					<div class="col-md-4">
+						<a href="http://www.urjc.es"><img src="./img/urjc.gif"
+							alt="Universidad Rey Juan Carlos" height="50px" /></a>
+					</div>
+					<div class="col-md-4">
+						<a href="http://www.kurento.org"><img src="./img/kurento.png"
+							alt="Kurento" height="50px" /></a>
+					</div>
+					<div class="col-md-4">
+						<a href="http://www.naevatec.com"><img
+							src="./img/naevatec.png" alt="Naevatec" height="50px" /></a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</footer>
+	-->
+</body>
+</html>
