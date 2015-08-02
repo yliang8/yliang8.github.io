@@ -101,134 +101,157 @@ var MSG_C2S = {
 function setClientState(nextState) {
 	switch (nextState) {
 	case STATES.NOT_REGISTERED:
-		$('#register').attr('disabled', false);
-		$('#call').attr('disabled', true);
-		$('#terminate').attr('disabled', true);
-		$('#confirmVideo').attr('disabled', true);
-		$('#startGame').attr('disabled', true);
-		$('#play').attr('disabled', true);
-		
-		directionsBox.value = 
-			'Please type a name into the name box and click login to continue';
-		document.getElementById("describerImage").style.opacity = "0";
-		document.getElementById('name').focus();
+		directionsBox.text("Please register with your name in the control panel below");
+		$("#STATES_NOT_REGISTERED").show();
+		$("#name").focus();
 		break;
 	case STATES.REGISTERING:
+		directionsBox.text("Waiting for registration response from server");
+		$("#STATES_NOT_REGISTERED").show();
 		$('#register').attr('disabled', true);
-		directionsBox.value = 'Waiting for registration response from server'; 
 		break;
 	case STATES.REGISTERED:
-		$('#register').attr('disabled', true);
-		$('#call').attr('disabled', false);
-		directionsBox.value = 
-		    'Please enter a peer name and click connect'; 
+		directionsBox.text("Please enter your peer's name and call");
+		$("#STATES_NOT_REGISTERED").hide();
+		$("#STATES_REGISTERED").show();
+		$("#peer").focus();	
 		break;
 	case STATES.CALLING:
-		directionsBox.value = 'Attempting call'; 
+		directionsBox.text("Attempting call"); 
+		$("#STATES_REGISTERED").show();
 		$('#call').attr('disabled', true);
 		break;
 	case STATES.INCOMING:
-		directionsBox.value = 'Incoming call'; 
+		directionsBox.text("Incoming call"); 
+		$("#STATES_REGISTERED").show();
 		$('#call').attr('disabled', true);
-		$('#terminate').attr('disabled', true);
-		$('#play').attr('disabled', true);
 		break;	
-	case STATES.PLAY_REQUEST:
-		directionsBox.value = 'Waiting for play request response'; 
-		$('#call').attr('disabled', true);
-		$('#terminate').attr('disabled', true);
-		$('#play').attr('disabled', true);
-		break;
 	case STATES.IN_CALL:
-		$('#call').attr('disabled', true);
-		$('#terminate').attr('disabled', false);
-		$('#play').attr('disabled', true);
-		$('#confirmVideo').attr('disabled', false);
-		directionsBox.value = 
-		    'Please click confirm when peer video begins'; 
+		directionsBox.text("Please click confirm when peer video begins"); 
+		$("#STATES_REGISTERED").hide();
+		$("#STATES_IN_CALL").show();
+		$("#videoOutput").show();
 		break;
 	case STATES.WAITING_FOR_PEER_CONFIRM:
+		directionsBox.text("Waiting for your peer to confirm"); 
+		$("#STATES_IN_CALL").show();
 		$('#confirmVideo').attr('disabled', true);
-		$('#startGame').attr('disabled', true);
-		directionsBox.value = 'Click start when ready'; 
-		document.getElementById("videoInput").style.opacity = "0";
 		break;
 	case STATES.WAITING_FOR_START:
-		$('#startGame').attr('disabled', false);
-		directionsBox.value = 'Click start when ready'; 
-		document.getElementById("videoInput").style.opacity = "0";
+		directionsBox.text("Click start when ready"); 
+		$("#STATES_IN_CALL").hide();
+		$("#STATES_WAITING_FOR_START").show();
+		$("clientRole").text(clientRole);
 		break;
 	case STATES.WAITING_FOR_PEER_START:
-		$('#startGame').attr('disabled', true);
-		directionsBox.value = 'Waiting for your peer to click start'; 
+		directionsBox.text("Waiting for your peer to click start"); 
+		$("#STATES_WAITING_FOR_START").show();
+		$("#startGame").attr('disabled', true);
+		$("clientRole").text(clientRole);
 		break;
 	case STATES.REVIEWING_IMAGE:
+		$("#STATES_WAITING_FOR_START").hide();
 		if(clientRole == ROLES.DESCRIBER) {
-			document.getElementById("describerImage").style.opacity = "1";
-			directionsBox.value = 
-				'You have 30 seconds to memorize this image\'s details'; 
+			directionsBox.text("You have 30 seconds to memorize the image below");
+			$("#STATES_REVIEWING_IMAGE").show();
 			initCountdown(30, $('#imageCountdown'));
 		}
 		else {
-			directionsBox.value = 
-				'Describer has 30 seconds to view their image.'; 
+			directionsBox.text("Describer has 30 seconds to view their image.");
+			$("#STATES_REVIEWING_IMAGE").show();
+			$("#describerImage").hide();
 			initCountdown(30, $('#imageCountdown'));
 		}
-		document.getElementById("videoOutput").style.opacity = "0";
+		$("clientRole").text(clientRole);
+		$("#videoOutput").hide();
+		$("#videoNote").text("Video is hidden for 30 seconds.");
 		break;
 	case STATES.FIRST_INTERROGATION:
+		$("#STATES_REVIEWING_IMAGE").hide();
+		$("#FIRST_INTERROGATION").show();
+		$("clientRole").text(clientRole);
 		initCountdown(120, $('#videoCountdown'));
-		document.getElementById("describerImage").style.opacity = "0";
-		document.getElementById("videoOutput").style.opacity = "1";
-		directionsBox.value = 'You have two minutes of questioning.'; 
+		if(clientRole == ROLES.DESCRIBER) {
+			directionsBox.text("You have two minutes of being questioned"); 
+		}
+		else {
+			directionsBox.text("You have two minutes to question"); 
+			$("#assignmentLine").hide();
+		}
 		break;
 	case STATES.FIRST_RESPONSE:
-		directionsBox.value = 
-				'INTERROGATOR should now log their first decision'; 
+		$("#FIRST_INTERROGATION").show();
+		$("clientRole").text(clientRole);
+		directionsBox.text("INTERROGATOR should now log their first decision now, DESCRIBER please wait. ");		
+		$("#videoOutput").hide();
+		$("#videoNote").text("Video is hidden as the interrogator enters his/her response");
 		break;
 	case STATES.SECOND_INTERROGATION:
-		var id = document.getElementById("videoCountdown");
-		countdown(120,id);
-		directionsBox.value = 'You have two more minutes of questioning.'; 
+		$("#FIRST_INTERROGATION").show();
+		$("clientRole").text(clientRole);
+		initCountdown(120, $('#videoCountdown'));
+		if(clientRole == ROLES.DESCRIBER) {
+			directionsBox.text("You have two more minutes of being questioned"); 
+		}
+		else {
+			directionsBox.text("You have two more minutes to question"); 
+			$("#assignmentLine").hide();
+			$("#FIRST_INTERROGATION").append("<p><b>Hint: </b>");
+		}
 		break;
 	case STATES.SECOND_RESPONSE:
-		directionsBox.value = 
-				'INTERROGATOR should now log their second decision'; 
+		$("#FIRST_INTERROGATION").show();
+		$("#videoOutput").hide();
+		$("#videoNote").text("Video is hidden as the interrogator enters his/her response");
+		$("clientRole").text(clientRole);
+		directionsBox.text("INTERROGATOR should now log their second decision"); 
 		break;
-	case STATES.POST_SURVEY:
+	case STATES.POST_CALL:
+		directionsBox.text("Interrogation Ended. Your videos are recorded. Thank you very much for your participation!"); 
+		$("#container2").hide();
 		break;
-		
-	case STATES.POST_CALL:	 // PERHAPS WE DON'T NEED THIS?
-		$('#call').attr('disabled', false);
-		$('#terminate').attr('disabled', true);
-		$('#play').attr('disabled', false);
-		break;
-	case STATES.IN_PLAYBACK:
-		$('#call').attr('disabled', true);
-		$('#terminate').attr('disabled', false);
-		$('#play').attr('disabled', true);
-		break;	
-		
 	default:
 		return;
 	}
 	clientState = nextState;
-	statusBox.value = clientState;
-	roleBox.value = clientRole;
 }
 
+
+function initControlPanel() {
+	$("#STATES_NOT_REGISTERED").hide();
+	$("#STATES_REGISTERED").hide();
+	$("#STATES_IN_CALL").hide();
+	$("#STATES_WAITING_FOR_START").hide();
+	$("#STATES_REVIEWING_IMAGE").hide();
+	$("#FIRST_INTERROGATION").hide();
+	$("#videoOutput").show();
+
+}
 
 //--------------------------------------------------------------------
 window.onload = function() {
 	console = new Console();
 	var drag = new Draggabilly(document.getElementById('videoSmall'));
-	videoInput = document.getElementById('videoInput');
-	videoOutput = document.getElementById('videoOutput');
-	directionsBox = document.getElementById("directionsBox");
-	statusBox = document.getElementById("statusBox");
-	roleBox = document.getElementById("roleBox");
+	videoInput = $("#videoInput");
+	videoOutput = $("#videoOutput");
+	directionsBox = $("#directionsBox");
+	initControlPanel();
+
     setClientState(STATES.NOT_REGISTERED);
-	document.getElementById('name').focus();
+    setClientState(STATES.REGISTERING);
+    setClientState(STATES.REGISTERED);
+    setClientState(STATES.CALLING);
+    setClientState(STATES.INCOMING);
+    setClientState(STATES.IN_CALL);
+    setClientState(STATES.WAITING_FOR_PEER_CONFIRM);
+    setClientState(STATES.WAITING_FOR_START);
+    setClientState(STATES.WAITING_FOR_PEER_START);
+    setClientState(STATES.REVIEWING_IMAGE);
+    setClientState(STATES.FIRST_INTERROGATION);
+	setClientState(STATES.FIRST_RESPONSE);
+    setClientState(STATES.SECOND_INTERROGATION);
+    setClientState(STATES.SECOND_RESPONSE);
+    // setClientState(STATES.POST_CALL);
 }
 
 //--------------------------------------------------------------------
@@ -441,7 +464,7 @@ function onOfferIncomingCall(error, offerSdp) {
 function register() {
 	var name = document.getElementById('name').value;
 	if (name == '') {
-		window.alert('You must insert your user name');
+		$("#noUserNameAlert").text("You must enter your username");
 		document.getElementById('name').focus();
 		return;
 	}
@@ -461,7 +484,7 @@ function register() {
 function call() {
 	if (document.getElementById('peer').value == '') {
 		document.getElementById('peer').focus();
-		window.alert('You must specify the peer name');
+		$("#noPeerNameAlert").text("You must specify a peer name");
 		return;
 	}
 	setClientState(STATES.CALLING);
@@ -622,17 +645,13 @@ function roleAssignment(message) {
 	if(clientState != STATES.WAITING_FOR_PEER_CONFIRM) {
 		console.log('ERROR: roleAssignment received in wrong state');
 	}
-		else {
+	else {
 		if(message.role == 'interrogator') {
 			clientRole = ROLES.INTERROGATOR;
-			directionsBox.value = 
-				'You are an INTERROGATOR. Click start when ready to begin.'; 
 			alert('You are an INTERROGATOR. Click start when ready to begin.');
 		}
 		else {
 			clientRole = ROLES.DESCRIBER;
-			directionsBox.value = 
-				'You are a DESCRIBER. Click start when ready to begin.'; 
 			alert('You are a DESCRIBER. Click start when ready to begin.');
 		}
 		setClientState(STATES.WAITING_FOR_START); // to update display
